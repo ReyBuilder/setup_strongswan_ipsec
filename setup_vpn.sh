@@ -16,10 +16,11 @@ echo <<EOF
 EOF
 }
 
-RED_FRMT="\033[0;31m"
+RED_FRMT="\e[0;31m"
+NO_FRMT="\e[0m"
 errecho()
 {
-    echo -e "\[${RED_FRMT}$1\]"
+    echo -e "${RED_FRMT}$1${NO_FRMT}"
     help
 }
 
