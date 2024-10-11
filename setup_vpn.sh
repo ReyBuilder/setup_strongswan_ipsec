@@ -145,11 +145,9 @@ while [[ $# -gt 0 ]]; do
         cc=*|cacert=*)
             CA_CERT="${1#*=}"
             shift
-            shift
             ;;
         ck=*|cakey=*)
             CA_KEY="${1#*=}"
-            shift
             shift
             ;;
         *)
