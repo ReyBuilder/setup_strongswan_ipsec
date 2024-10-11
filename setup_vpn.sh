@@ -1,5 +1,5 @@
-CA_KEY=caKey.pem
-CA_CERT=caCert.pem
+CA_KEY=
+CA_CERT=
 HOST_KEY=hostKey.pem
 HOST_CERT=hostCert.pem
 
@@ -8,15 +8,18 @@ HOST_IP=$(ip -4 route get 1 | sed 's/ uid .*//' | awk '{print $NF;exit}')
 
 help()
 {
-    echo "Usage: $0 [OPTIONS...]"
+echo <<EOF
+"Usage: $0 [arg=value...]"
+"Argument list:"
+"   cc|cacert   - certificate authority (CA) pem file"
+"   ck|cakey    - certificate authority (CA) key pem file"
+EOF
 }
 
 RED_FRMT="\033[0;31m"
-NO_FRMT="\033[0m"
 errecho()
 {
-    echo -e "${RED_FRMT}$1${NO_FRMT}"
-    echo ""
+    echo -e "\[${RED_FRMT}$1\]"
     help
 }
 
@@ -123,7 +126,7 @@ restart_strongswan()
     systemctl restart strongswan
 }
 
-make_all()
+setup_vpn()
 {
     install_strongswan
     configure_sswan
@@ -138,25 +141,21 @@ fi
 
 while [[ $# -gt 0 ]]; do
     case $1 in
-        -cc|--cacert)
-            CA_CERT="$2"
+        cc=*|cacert=*)
+            CA_CERT="${1#*=}"
             shift
             shift
             ;;
-        -ck|--cakey)
-            CA_KEY="$2"
+        ck=*|cakey=*)
+            CA_KEY="${1#*=}"
             shift
             shift
-            ;;
-        -*|--*)
-            help
-            exit 1
             ;;
         *)
-            errecho "No args expected"
+            errecho "Unknown parameter encountered"
             help
             ;;
     esac
 done
 
-make_all
+setup_vpn
