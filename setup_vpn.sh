@@ -162,7 +162,7 @@ restart_strongswan()
 {
     (
         # enable verbose printing
-        #set -x
+        set -x
 
         systemctl restart strongswan
     )
