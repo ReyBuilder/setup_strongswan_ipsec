@@ -11,10 +11,11 @@ help()
     echo "Usage: $0 [OPTIONS...]"
 }
 
-RED_FRMT="\033[0;31"
+RED_FRMT="\033[0;31m"
+NO_FRMT="\033[0m"
 errecho()
 {
-    echo -e ${RED_FRMT}$1
+    echo -e "${RED_FRMT}$1${NO_FRMT}"
     echo ""
     help
 }
