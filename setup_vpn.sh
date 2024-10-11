@@ -44,12 +44,12 @@ generate_host_cert()
 
 copy_ca_cert_and_key()
 {
-    if [! -f $1]; then
+    if [ ! -f $1 ]; then
         errecho "No CA cert specified"
         exit 1
     fi
 
-    if [! -f $2]; then
+    if [ ! -f $2 ]; then
         errecho "No CA key specified"
         exit 1
     fi
