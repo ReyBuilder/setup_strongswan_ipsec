@@ -1,3 +1,5 @@
+#!/bin/sh
+
 CA_KEY=
 CA_CERT=
 HOST_KEY=hostKey.pem
@@ -16,35 +18,52 @@ cat <<EOF
 EOF
 }
 
-RED_FRMT="\e[0;31m"
-NO_FRMT="\e[0m"
+RED_FRMT="\033[0;31m"
+GRAY_FRMT="\033[0;37m"
+NO_FRMT="\033[0m"
+
 errecho()
 {
-    echo -e "${RED_FRMT}$1${NO_FRMT}"
+    echo "${RED_FRMT}$1${NO_FRMT}"
     help
+}
+
+logecho()
+{
+    echo "${GRAY_FRMT}[*] ${NO_FRMT}$1"
 }
 
 install_strongswan()
 {
-    # update system packages
-    sudo apt-get -yq update && sudo apt-get -yq upgrade
+    (
+        # enable verbose printing
+        set -x
 
-    # install sswan
-    sudo apt-get -yq install charon-systemd strongswan-swanctl strongswan-pki libstrongswan-extra-plugins libtss2-tcti-tabrmd0
+        # update system packages
+        apt-get -yqq update || apt-get -yqq update >/dev/null
+
+        # install sswan
+        apt-get -yqq install charon-systemd strongswan-swanctl strongswan-pki libstrongswan-extra-plugins libtss2-tcti-tabrmd0 >/dev/null
+    )
 }
 
 generate_host_cert()
 {
-    # generate host private key
-    pki --gen --type rsa --outform pem > /etc/swanctl/private/hostKey.pem
+    (
+        # enable verbose printing
+        set -x
 
-    # generate host certificate
-    pki --pub --in /etc/swanctl/private/hostKey.pem --type rsa \
-        | pki --issue --lifetime 1825 --cacert /etc/swanctl/x509ca/caCert.pem --cakey /etc/swanctl/private/caKey.pem \
-            --dn "O=VelvetVPN, CN=$HOST_IP" \
-            --flag serverAuth --flag ikeIntermediate \
-            --san "$HOST_IP" --san "$HOST_IP" \
-            --outform pem > /etc/swanctl/x509/hostCert.pem
+        # generate host private key
+        pki --gen --type rsa --outform pem > /etc/swanctl/private/hostKey.pem
+
+        # generate host certificate
+        pki --pub --in /etc/swanctl/private/hostKey.pem --type rsa \
+            | pki --issue --lifetime 1825 --cacert /etc/swanctl/x509ca/caCert.pem --cakey /etc/swanctl/private/caKey.pem \
+                --dn "O=VelvetVPN, CN=$HOST_IP" \
+                --flag serverAuth --flag ikeIntermediate \
+                --san "$HOST_IP" --san "$HOST_IP" \
+                --outform pem > /etc/swanctl/x509/hostCert.pem
+    )
 }
 
 copy_ca_cert_and_key()
@@ -59,8 +78,13 @@ copy_ca_cert_and_key()
         exit 1
     fi
 
-    cp "$1" /etc/swanctl/x509ca/caCert.pem
-    cp "$2" /etc/swanctl/private/caKey.pem
+    (
+        # enable verbose printing
+        #set -x
+
+        cp "$1" /etc/swanctl/x509ca/caCert.pem >/dev/null
+        cp "$2" /etc/swanctl/private/caKey.pem >/dev/null
+    )
 }
 
 configure_certs()
@@ -122,25 +146,45 @@ secrets {
 EOF
 }
 
+configure_sysctl()
+{
+    (
+        # enable verbose printing
+        set -x
+
+        echo "net.ipv4.ip_forward=1" >> /etc/sysctl.conf
+        echo "net.ipv6.conf.all.forwarding=1" >> /etc/sysctl.conf
+        sysctl -p
+    )
+}
+
 restart_strongswan()
 {
-    systemctl restart strongswan
+    (
+        # enable verbose printing
+        #set -x
+
+        systemctl restart strongswan
+    )
 }
 
 setup_vpn()
 {
-    install_strongswan
-    configure_sswan
-    configure_certs
-    restart_strongswan
+    CMDS="install_strongswan configure_sswan configure_certs restart_strongswan"
+
+    for CMD in $CMDS
+    do
+        logecho "$CMD phase"
+        $CMD
+    done
 }
 
-if [ "$EUID" -ne 0 ]; then
+if [ "$(id -u)" -ne 0 ]; then
     errecho "Please run as root"
     exit 1
 fi
 
-while [[ $# -gt 0 ]]; do
+while [ $# -gt 0 ]; do
     case $1 in
         cc=*|cacert=*)
             CA_CERT="${1#*=}"
