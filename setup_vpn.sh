@@ -16,7 +16,7 @@ errecho()
 {
     echo -e ${RED_FRMT}$1
     echo ""
-    help()
+    help
 }
 
 install_strongswan()
