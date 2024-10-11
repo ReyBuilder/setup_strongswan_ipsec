@@ -8,7 +8,7 @@ HOST_IP=$(ip -4 route get 1 | sed 's/ uid .*//' | awk '{print $NF;exit}')
 
 help()
 {
-echo <<EOF
+cat <<EOF
 "Usage: $0 [arg=value...]"
 "Argument list:"
 "   cc|cacert   - certificate authority (CA) pem file"
@@ -154,7 +154,7 @@ while [[ $# -gt 0 ]]; do
             ;;
         *)
             errecho "Unknown parameter encountered"
-            help
+            shift
             ;;
     esac
 done
